@@ -1,0 +1,67 @@
+name: ⚡ Get X.com Influencers Posts
+
+on:
+  repository_dispatch:
+    types: [get-x-influencers-posts]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: twitter-account-3
+  cancel-in-progress: false
+
+jobs:
+  get_x_influencers_posts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - run: npm install
+        name: Install deps
+
+      - run: npx playwright install --with-deps firefox
+        name: Install Playwright browsers
+
+      - name: Run bot
+        env:
+          DISCORD_TOKEN:   ${{ vars.DISCORD_TOKEN }}
+          DISCORD_TWITTER_INFLUENCERS_WEBHOOK: ${{ vars.DISCORD_TWITTER_INFLUENCERS_WEBHOOK }}
+          X_USERNAMES:     ${{ vars.X_INFLUENCERS_USERNAMES }}
+          X_COOKIE_HEADER: ${{ vars.X_COOKIE_HEADER_1 }}
+        run: node twitter_influencers/index.mjs
+
+      - name: Commit state
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git pull --rebase --autostash origin main
+          
+          # enable nullglob so non-matching globs are removed
+          shopt -s nullglob
+
+          # Stage only existing files
+          files=(twitter_influencers/last_link_*.json)
+          for file in "${files[@]}"; do
+            if [[ -f "$file" ]]; then
+              git add "$file"
+            fi
+          done
+
+          # Check for debug files in twitter directory (adjust path if needed)
+          for file in x.com/debug_*.html; do
+            if [[ -f "$file" ]]; then
+              git add "$file"
+            fi
+          done
+
+          git diff --cached --quiet || git commit -m "Update last seen links"
+          git push
