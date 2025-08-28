@@ -68,7 +68,10 @@ async function main() {
         newLinks = Array.from(new Set(newLinks)).reverse();
 
         for (const link of newLinks) {
-          await webhook.send({ content: link, allowed_mentions: { parse: [] } });
+          // replace x.com with fixupx.com to avoid link preview problems
+          const fixedLink = link.replace(/x\.com/, "fixupx.com");
+          console.log(`Sending link for ${username}:`, fixedLink);
+          await webhook.send({ content: fixedLink, allowed_mentions: { parse: [] } });
           await sleep(1000);
         }
 
