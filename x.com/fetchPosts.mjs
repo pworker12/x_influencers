@@ -16,6 +16,7 @@ export async function fetchLatestPosts(username, limit = 10, days = 7, returnOnl
       const [name, value] = cookie.split("=");
       return { name, value, domain: ".x.com", path: "/", secure: true };
     });
+    console.log(`Loaded ${cookies.length} cookies`);
 
     browser = await firefox.launch({ headless: true });
     const context = await browser.newContext();
@@ -25,6 +26,11 @@ export async function fetchLatestPosts(username, limit = 10, days = 7, returnOnl
     await page.goto(`https://x.com/${username}`, { timeout: 60000 });
     console.log("Waiting for page to load...");
     await page.waitForTimeout(15000);
+    // make sure we are logged in by checking for the profile icon
+    const isLoggedIn = await page.$('a[href="/home"]');
+    if (!isLoggedIn) {
+      console.log("Not logged in - please check your cookies");
+    }
     console.log("waiting for article elements to appear...");
     try {
       await page.waitForSelector("article", { timeout: 30000 });
@@ -55,7 +61,7 @@ export async function fetchLatestPosts(username, limit = 10, days = 7, returnOnl
           returnOnlyWithImage
       );
 
-      console.log(`Found ${itemsRaw.length} posts in this scroll`);
+      console.log(`Found ${itemsRaw.length} posts in this scroll, links: ${itemsRaw.map(i => i.url).join(", ")}`);      
 
       const newItems = [];
       for (const item of itemsRaw) {
@@ -77,18 +83,32 @@ export async function fetchLatestPosts(username, limit = 10, days = 7, returnOnl
       }
     }
 
+    console.log(`Total unique posts found: ${results.length}`);
+    if (!results.length) {
+      console.log(`No posts found for ${username}`);
+      return [];
+    }
+
     // filter by date & format URLs
     const cutoff = Date.now() - days * 24 * 3600 * 1000;
     const recent = results.filter(i => new Date(i.date).getTime() >= cutoff);
-    const regex = new RegExp(`^https://x\\.com/${username}/status/\\d+$`);
+    console.log(`Posts within the last ${days} days: ${recent.length}`);
+    if (!recent.length) {
+      console.log(`No recent posts found for ${username}`);
+      return [];
+    }
+
+    const regex = new RegExp(`^https://x\\.com/${username}/status/\\d+$`, "i");
     const finalUrls = Array.from(new Set(recent.map(i => i.url)))
       .filter(u => regex.test(u))
       .slice(0, limit);
 
+    console.log(`Final URLs to return (limit ${limit}):`, finalUrls);
     if (!finalUrls.length) {
       console.log(`No posts found for ${username}`);
       return [];
     }
+
     return finalUrls;
   } catch (error) {
     console.error("❌ Error fetching posts:", error);
