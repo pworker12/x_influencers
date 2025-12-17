@@ -37,7 +37,10 @@ jobs:
           DISCORD_WEBHOOK_2: ${{ vars.DISCORD_WEBHOOK_2 }}
           DISCORD_WEBHOOK_3: ${{ vars.DISCORD_WEBHOOK_3 }}
           DISCORD_WEBHOOK_4: ${{ vars.DISCORD_WEBHOOK_4 }}
-          X_USERNAMES:     ${{ vars.X_USERNAMES }}
+          X_USERNAMES1:     ${{ vars.X_USERNAMES1 }}
+          X_USERNAMES2:     ${{ vars.X_USERNAMES2 }}
+          X_USERNAMES3:     ${{ vars.X_USERNAMES3 }}
+          X_USERNAMES4:     ${{ vars.X_USERNAMES4 }}
           X_COOKIE_HEADER: ${{ vars.X_COOKIE_HEADER }}
         run: node twitter_mix/index.mjs
 
