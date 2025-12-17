@@ -54,7 +54,7 @@ jobs:
           shopt -s nullglob
 
           # Stage only existing files
-          files=(twitter_mix/last_link_*.json)
+          files=(twitter_mix/group_*.json)
           for file in "${files[@]}"; do
             if [[ -f "$file" ]]; then
               git add "$file"
